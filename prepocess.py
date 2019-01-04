@@ -4,50 +4,77 @@ from scipy.io import wavfile # get the api
 #import math
 import cmath
 import numpy as np
+import pydub
+from pydub import AudioSegment
+from os import path
+import wave
 #import seaborn
 
-#filename excep .wav
-#frame_length, overlap is passed by milli second
-#bit_depth is set to be 16 bits
-def fft_array(filename,frame_length=40,overlap=10,bit_depth=16):
+def fft_array(filename,channel=2,frame_length=40,overlap=10,bit_depth=16):
     mag=[]
     phase=[]
+    full_mag=[]
+    full_phase=[]
     fs, data = wavfile.read(filename+'.wav') 
-    square_sum=[left for left in data.T[0]]+[right for right in data.T[1]]
-    rms=np.array([item/2 for item in square_sum])
+    square_sum=[item for item in data.T[0]]
+    for i in range(1,channel):
+        square_sum+=[item for item in data.T[i]]
+    rms=np.array([item/channel for item in square_sum])
     num_sample=int(fs*frame_length/1e3)
-    x=np.linspace(0,1,num=num_sample)
-
-    #for test
-    #x=np.linspace(0,1,num=44100)
-    #y=7*np.sin(2*np.pi*180*x) + 2.8*np.sin(2*np.pi*390*x)+5.1*np.sin(2*np.pi*600*x)
-    #print(num_sample)
+    window = np.hamming(num_sample)
     begin_frame=0
     while((begin_frame+fs*frame_length/1e3)<rms.size):
         y=rms[begin_frame:int(begin_frame+fs*frame_length/1e3)]
-
-        yy=fft(y)
-        yreal = yy.real
-        yimag = yy.imag
+        
+        yy=fft(np.multiply(window, y))
 
         yf=abs(yy)
-        yf1=yf/len(x)
-        yf2 = yf1[range(int(num_sample/2))] 
-
-        xf = np.arange(len(y))
-        xf1 = xf
-        xf2 = xf[range(int(num_sample/2))]
+        yf1=yf
+        yf2 = yf1[0:int(num_sample/2)] 
 
         yp=np.array([cmath.phase(item) for item in yy])
-        yp1=yp/num_sample
-        yp2=yp[range(int(num_sample/2))]
-
+        yp1=yp
+        yp2=yp[0:int(num_sample/2)]
+        full_mag.append(yf1)
+        full_phase.append(yp1)
         mag.append(yf2)
         phase.append(yp2)
-        begin_frame+=int(fs*overlap/1e3)
-    return [np.array(mag),np.array(phase)]
+        begin_frame+=int(fs*(frame_length-overlap)/1e3)
+    return np.array(mag),np.array(phase),np.array(full_mag),np.array(full_phase)
+
+def ifft_array(mag,phase,frame_length=40,overlap=10,bit_depth=16,fs=44100):
+    data=[]
+    num_sample=mag[0].size#*2
+    inverse_window=1./np.hamming(num_sample)
+    frame_mag=[]
+    frame_phase=[]
+    frame_complex=[]
+    for frame in range(mag.shape[0]):
+        for item in mag[frame]:
+            frame_mag.append(item)#*num_sample
+        #for item in mag[frame][::-1]:
+            #frame_mag.append(item)#*num_sample
+       # print(frame_mag[0:10])
+        for item in phase[frame]:
+            frame_phase.append(item)
+        #for item in phase[frame][::-1]:
+            #frame_phase.append(-item)
+        
+        
+        for i in range(len(frame_mag)):
+            frame_complex.append(cmath.rect(frame_mag[i],frame_phase[i]))
+        
+        if(frame!=0):
+            data=data[0:(len(data)-int(num_sample*overlap/frame_length))]
+        data.extend(np.multiply(inverse_window,ifft(frame_complex).real))
+        frame_mag=[]
+        frame_phase=[]
+        frame_complex=[]
+        
+    return np.array([item*2 for item in data],dtype=np.int16)
 
 '''
-how to use it
-mag,phase=fft_array('untitled')
+mag,phase,x,y=fft_array('untitled')#[mag,phase]=
+array=ifft_array(x,y)
+wavfile.write('tem.wav',rate=44100,data=array[0:int(len(array)/2)])#data=array[0:int(len(array)/2)]
 '''
