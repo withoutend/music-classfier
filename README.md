@@ -18,7 +18,7 @@ return 16 bit mono wav array
 1/5 update
 
 #### fft_array ####
-add std of white noise as input parameter 
+add std of white noise as input parameter
 correct the mag and phase and angle pi and 0
 delete the return of full mag and full phase 
 
