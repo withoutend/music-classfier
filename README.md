@@ -14,3 +14,12 @@ also return full image of magnitude and phase at index 2,3.
 #### ifft_array ####
 take full image magnitude and phase as input parameter
 return 16 bit mono wav array
+
+1/5 update
+
+#### fft_array ####
+correct the mag and phase and angle pi and 0
+delete the return of full mag and full phase 
+
+#### ifft_array ####
+take half image magnitude and phase as input parameter

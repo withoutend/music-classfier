@@ -30,21 +30,23 @@ def fft_array(filename,channel=2,frame_length=40,overlap=10,bit_depth=16):
 
         yf=abs(yy)
         yf1=yf
-        yf2 = yf1[0:int(num_sample/2)] 
+        yf2 = yf1[0:int(num_sample/2+1)] 
+
 
         yp=np.array([cmath.phase(item) for item in yy])
         yp1=yp
-        yp2=yp[0:int(num_sample/2)]
+        yp2=yp[0:int(num_sample/2+1)]
+        
         full_mag.append(yf1)
         full_phase.append(yp1)
         mag.append(yf2)
         phase.append(yp2)
         begin_frame+=int(fs*(frame_length-overlap)/1e3)
-    return np.array(mag),np.array(phase),np.array(full_mag),np.array(full_phase)
+    return np.array(mag),np.array(phase)
 
 def ifft_array(mag,phase,frame_length=40,overlap=10,bit_depth=16,fs=44100):
     data=[]
-    num_sample=mag[0].size#*2
+    num_sample=(mag[0].size-1)*2
     inverse_window=1./np.hamming(num_sample)
     frame_mag=[]
     frame_phase=[]
@@ -52,14 +54,13 @@ def ifft_array(mag,phase,frame_length=40,overlap=10,bit_depth=16,fs=44100):
     for frame in range(mag.shape[0]):
         for item in mag[frame]:
             frame_mag.append(item)#*num_sample
-        #for item in mag[frame][::-1]:
-            #frame_mag.append(item)#*num_sample
-       # print(frame_mag[0:10])
+        for item in mag[frame][::-1][1:-1]:
+            frame_mag.append(item)#*num_sample
+    
         for item in phase[frame]:
             frame_phase.append(item)
-        #for item in phase[frame][::-1]:
-            #frame_phase.append(-item)
-        
+        for item in phase[frame][::-1][1:-1]:
+            frame_phase.append(-item)  
         
         for i in range(len(frame_mag)):
             frame_complex.append(cmath.rect(frame_mag[i],frame_phase[i]))
@@ -75,6 +76,6 @@ def ifft_array(mag,phase,frame_length=40,overlap=10,bit_depth=16,fs=44100):
 
 '''
 mag,phase,x,y=fft_array('untitled')#[mag,phase]=
-array=ifft_array(x,y)
-wavfile.write('tem.wav',rate=44100,data=array[0:int(len(array)/2)])#data=array[0:int(len(array)/2)]
+array=ifft_array(mag,phase)
+wavfile.write('tem.wav',rate=44100,data=array[0:int(len(array)/2)])
 '''
