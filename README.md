@@ -24,3 +24,12 @@ delete the return of full mag and full phase .
 
 #### ifft_array ####
 change input parameters, take half image magnitude and phase as input parameter.
+
+#### low_pass_filter ####
+take magnitude, phase, cuttoff, and decay per otave as input parameters.
+return mag and phase.
+
+1/6 update
+
+#### fft_array ####
+add interval as a input parameter to slice the wav file. 
