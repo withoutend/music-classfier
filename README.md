@@ -1,4 +1,4 @@
-prepocess.py
+preprocess.py
 
 #### fft_array ####
 takes filename(can only take wave file, remeber discard .wav), frame_length(=40ms), overlap(=10ms), bit_depth(=16 bits) as input parameters. 
