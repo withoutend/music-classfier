@@ -10,26 +10,31 @@ from os import path
 import wave
 #import seaborn
 
-def fft_array(filename,channels=2,frame_length=40,overlap=10,bit_depth=16,white_noise_std_in_dB=2**10,interval=[0,-1]):
+def fft_array(filename,channels=2,frame_length=40,overlap=10,bit_depth=16,white_noise_std_in_dB=-10,interval=[0,-1]):
     mag=[]
     phase=[]
     fs, data = wavfile.read(filename+'.wav')
     
     #compute average of all channel
     if(interval[1]==-1):
-        #if(interval[0]>=0 and interval[0]<=(data.T[0].size/fs):
-        square_sum=[item for item in data.T[0][int(fs*interval[0]):]]
-        for i in range(1,channels):
-            square_sum+=[item for item in data.T[i]]
+        if(channels==1):
+            square_sum=[item for item in data.T[int(fs*interval[0]):]]
+        else:
+            square_sum=[item for item in data.T[0][int(fs*interval[0]):]]
+            for i in range(1,channels):
+                square_sum+=[item for item in data.T[i]]
         rms=np.array([(item/channels) for item in square_sum][int(fs*interval[0]):])
     else:
-        square_sum=[item for item in data.T[0][int(fs*interval[0]):int(fs*interval[1])]]
-        for i in range(1,channels):
-            square_sum+=[item for item in data.T[i]]
+        if(channels==1):
+            square_sum=[item for item in data.T[int(fs*interval[0]):int(fs*interval[1])]]
+        else:
+            square_sum=[item for item in data.T[0][int(fs*interval[0]):int(fs*interval[1])]]
+            for i in range(1,channels):
+                square_sum+=[item for item in data.T[i]]
         rms=np.array([(item/channels) for item in square_sum][int(fs*interval[0]):int(fs*interval[1])])
     
     #add white noise
-    rms+=np.random.normal(0, (2**bit_depth)*(10**(white_noise_std_in_dB/10)), size=rms.shape[0])
+    rms+=np.random.normal(0, (2**(bit_depth-1))*(10**(white_noise_std_in_dB/10)), size=rms.shape[0])
     
     
     num_sample=int(fs*frame_length/1e3)
@@ -56,6 +61,11 @@ def fft_array(filename,channels=2,frame_length=40,overlap=10,bit_depth=16,white_
     return np.array(mag),np.array(phase)
 
 def ifft_array(mag,phase,channels=2,frame_length=40,overlap=10,bit_depth=16,fs=44100):
+    bit_type={8:np.uint8,16:np.int16,32:np.int32}
+    if(channels==1):
+        gain_ratio=2
+    else:
+        gain_ratio=channels
     data=[]
     num_sample=(mag[0].size-1)*2
     inverse_window=1./np.hamming(num_sample)
@@ -91,7 +101,7 @@ def ifft_array(mag,phase,channels=2,frame_length=40,overlap=10,bit_depth=16,fs=4
         frame_complex=[]
     
     #get real part, convert to 16 bit-depth
-    return np.array([item*channels for item in data],dtype=np.int16)
+    return np.array([item*gain_ratio for item in data[:int(len(data)/channels)]],dtype=bit_type[bit_depth])
 
 def low_pass_filter(mag,phase,cut_off=500,decay_in_dB=-10,gain_in_dB=-3,frame_length=40,overlap=10,bit_depth=16,fs=44100):
     num_sample=(mag[0].size-1)*2
@@ -120,8 +130,12 @@ def low_pass_filter(mag,phase,cut_off=500,decay_in_dB=-10,gain_in_dB=-3,frame_le
     return np.multiply(mag*gain,np.array(lpf_mag)),np.array(phase+np.array(lpf_phase))
 
 '''
-mag,phase=fft_array('untitled',white_noise_std_in_dB=-10,interval=[0,0.5])
-mag,phase=low_pass_filter(mag,phase,cut_off=1000,decay_in_dB=-10)
-array=ifft_array(mag,phase)
-wavfile.write('tem.wav',rate=44100,data=array[0:int(len(array)/2)])
+f=48000
+mag,phase=fft_array('p232_014',white_noise_std_in_dB=-100,channels=1)
+mag,phase=low_pass_filter(mag,phase,cut_off=2000,decay_in_dB=-10,fs=f)
+array=ifft_array(mag,phase,channels=1,fs=f)
+#mag,phase=fft_array('untitled',white_noise_std_in_dB=-100)
+#mag,phase=low_pass_filter(mag,phase,cut_off=20000,decay_in_dB=-10)
+#array=ifft_array(mag,phase)
+wavfile.write('tem.wav',rate=44100,data=array[0:int(len(array))])
 '''
