@@ -33,3 +33,7 @@ return mag and phase.
 
 #### fft_array ####
 add interval as a input parameter to slice the wav file. 
+
+1/7 update
+
+
