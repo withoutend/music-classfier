@@ -36,4 +36,4 @@ add interval as a input parameter to slice the wav file.
 
 1/7 update
 
-
+generally, I change the way importing wav data
