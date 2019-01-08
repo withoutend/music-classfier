@@ -39,7 +39,7 @@ def fft_array(filename,channels=2,frame_length=40,overlap=10,bit_depth=16,white_
         y=rms[begin_frame:int(begin_frame+fs*frame_length/1e3)]
         
         #apply hamming window
-        yy=fft(np.multiply(window, y))
+        yy=fft(np.multiply(window, y), axis=0)
 
         yf2 = abs(yy)[0:int(num_sample/2+1)] 
 
@@ -81,7 +81,7 @@ def ifft_array(mag,phase,channels=2,frame_length=40,overlap=10,bit_depth=16,fs=4
             data=data[0:(len(data)-int(num_sample*overlap/frame_length))]
         
         #apply inverse hamming window
-        data.extend(np.multiply(inverse_window,ifft(frame_complex).real))
+        data.extend(np.multiply(inverse_window,ifft(frame_complex, axis=0).real))
         
         #clear memory
         frame_mag=[]
