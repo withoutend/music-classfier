@@ -1,3 +1,5 @@
+Preporssing code used in Data Science and Deep Learning course, NCTU ECE, 2018
+
 preprocess.py
 
 #### fft_array ####
